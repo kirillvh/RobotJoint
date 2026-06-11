@@ -3,6 +3,7 @@
 * Forward Kinematics
 * RNE Dynamics including Gravity Compensation
 * Jacobian, COM Jacobian and its inverse
+* Motor Control
 
 
 
