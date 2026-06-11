@@ -1,0 +1,20 @@
+#find RobotJoint
+#quite a hack, should improve this file in future...
+
+find_path(LIBROBOTJOINT_INCLUDE_DIRS RobotManipulator.h
+HINTS /usr/local/include/RobotJoint)
+
+find_library(LIBROBOTJOINT_LIBRARIES NAMES RobotJoint
+             HINTS /usr/local/lib )
+
+
+IF (LIBROBOTJOINT_LIBRARIES AND LIBROBOTJOINT_INCLUDE_DIRS)
+   SET(LIBROBOTJOINT_FOUND TRUE)
+ENDIF (LIBROBOTJOINT_LIBRARIES AND LIBROBOTJOINT_INCLUDE_DIRS)
+
+
+IF (LIBROBOTJOINT_FOUND)
+      MESSAGE(STATUS "Found RobotJoint: ${LIBROBOTJOINT_LIBRARIES}")
+ELSE (LIBROBOTJOINT_FOUND)
+      MESSAGE(FATAL_ERROR "Could not find RobotJoint")
+ENDIF (LIBROBOTJOINT_FOUND)
