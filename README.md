@@ -1,4 +1,4 @@
-\## Efficient C++ Library for Humanoid Robotics
+## Efficient C++ Library for Humanoid Robotics
 
 * Forward Kinematics
 * RNE Dynamics including Gravity Compensation
