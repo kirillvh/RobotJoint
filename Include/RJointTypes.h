@@ -1,0 +1,167 @@
+/*
+Copyright 2012 Kirill Van Heerden
+SPDX-License-Identifier: MIT
+
+Licensed under the MIT License. See LICENSE for details.
+*/
+#ifndef RjointTypes_H
+#define RjointTypes_H
+
+#define RobotJoint_VERSION_MAJOR 0
+#define RobotJoint_VERSION_MINOR 3
+
+#include "Eigen/Geometry"
+#include "Eigen/Dense"
+#include "Eigen/SVD"
+#include "Eigen/StdVector"
+#include <map>
+
+#define GRAVITY 9.81
+
+//Macro's for accessing rotation and translation of a 4x4 transformation matrix
+#define TRANS(x) x.block<3,1>(0,3)
+#define ROT(x) x.block<3,3>(0,0)
+
+/* #undef USE_FLOAT */
+#define RJ_THREADED
+
+#ifdef USE_FLOAT
+typedef float RJReal;
+typedef Eigen::VectorXf RJVectorX;
+typedef Eigen::VectorXcf RJVectorXc;
+typedef Eigen::Matrix<RJReal, 1, 1> RJVector1;
+typedef Eigen::Vector2f RJVector2;
+typedef Eigen::Vector3f RJVector3;
+typedef Eigen::Vector4f RJVector4;
+typedef Eigen::MatrixXf RJMatrixX;
+typedef Eigen::MatrixXcf RJMatrixXc;
+typedef Eigen::Matrix<RJReal, 1, 1> RJMatrix1;
+typedef Eigen::Matrix2f RJMatrix2;
+typedef Eigen::Matrix3f RJMatrix3;
+typedef Eigen::Matrix4f RJMatrix4;
+typedef Eigen::Quaternionf RJQuaternion;
+#else
+typedef double RJReal;
+typedef Eigen::VectorXd RJVectorX;
+typedef Eigen::VectorXcd RJVectorXc;
+typedef Eigen::Matrix<RJReal, 1, 1> RJVector1;
+typedef Eigen::Vector2d RJVector2;
+typedef Eigen::Vector3d RJVector3;
+typedef Eigen::Vector4d RJVector4;
+typedef Eigen::MatrixXd RJMatrixX;
+typedef Eigen::Matrix<RJReal, 1, 1> RJMatrix1;
+typedef Eigen::Matrix2d RJMatrix2;
+typedef Eigen::Matrix3d RJMatrix3;
+typedef Eigen::Matrix4d RJMatrix4;
+typedef Eigen::Quaterniond RJQuaternion;
+#endif
+
+typedef Eigen::Matrix<RJReal, 6, 1> RJVector6;
+typedef Eigen::Matrix<RJReal, 12, 1> RJVector12;
+typedef Eigen::Matrix<RJReal, 6, Eigen::Dynamic> RJMatrix6X;
+typedef Eigen::Matrix<bool, Eigen::Dynamic, 1> RJBooleanVectorX;
+
+
+//credits to "Konrad Rudolph" on stackoverflow for this.
+//http://stackoverflow.com/questions/3767869/adding-message-to-assert
+#ifndef NDEBUG
+#   define RJASSERT(condition, message) \
+    do { \
+        if (! (condition)) { \
+            std::cerr << "Assertion `" #condition "` failed in " << __FILE__ \
+                      << " line " << __LINE__ << ": " << message << std::endl; \
+            std::exit(EXIT_FAILURE); \
+        } \
+    } while (false)
+#else
+#   define RJASSERT(condition, message) do { } while (false)
+#endif
+
+enum RoboJointVars {
+RJ_Jacobian        = 1,
+RJ_InvJacobian     = 2,
+RJ_COM             = 3,
+RJ_Kinematic       = 4,
+RJ_LeftLeg         = 5,
+RJ_RightLeg        = 6,
+RJ_wrt2base        = 7,
+RJ_Pos             = 8,
+RJ_Tooltip         = 9,
+RJ_Angle           = 10,
+RJ_PosRef          = 11,
+RJ_unNamed         = 12,
+RJ_Trunk           = 13,
+RJ_LeftArm         = 14,
+RJ_RightArm        = 15,
+};
+
+typedef std::map<RoboJointVars,RJMatrixX, std::less<int>, Eigen::aligned_allocator<std::pair<const RoboJointVars, RJMatrixX> > > RJMatrixXMap;
+typedef std::map<RoboJointVars,RJVector6, std::less<int>, Eigen::aligned_allocator<std::pair<const RoboJointVars, RJVector6> > > RJVector6Map;
+typedef std::map<RoboJointVars,RJVector3, std::less<int>, Eigen::aligned_allocator<std::pair<const RoboJointVars, RJVector3> > > RJVector3Map;
+typedef std::map<RoboJointVars,RJVectorX, std::less<int>, Eigen::aligned_allocator<std::pair<const RoboJointVars, RJVectorX> > > RJVectorXMap;
+typedef std::map<RoboJointVars,RJQuaternion, std::less<int>, Eigen::aligned_allocator<std::pair<const RoboJointVars, RJQuaternion> > > RJQuaternionMap;
+
+enum LegPhase {
+ LeftSup 	= 0,
+ RightSup 	= 1,
+ DoubleSup 	= 2,
+ Swing		= 3
+};
+
+enum Foot{
+ LeftFoot 	= 1, 
+ RightFoot 	= 2
+};
+
+enum RobotJointReturnMessages
+{
+        RJ_OK           = 0,
+        RJ_FAIL         = 1        
+};
+
+class Step{
+  public :
+  Step(){};  
+  Step(double StartT, double EndT, double Posx, double Posy)
+  {
+          StartTime = StartT;
+          EndTime = EndT;
+          FootPosX = Posx;
+          FootPosY = Posy;
+  }
+  Step(double StartT, double EndT, int StepC, double Posx, double Posy, Foot FootV, LegPhase P);  
+  Step(double StartT, double EndT, int StepC, double Posx, double Posy, Foot FootV, LegPhase P, double Rise);  
+  double StartTime;
+  double EndTime;
+  int StepCount;
+  double FootPosX;
+  double FootPosY;
+  Foot FootVal;
+  LegPhase Phase;
+  double RiseHeight;
+  double jump_factor;
+};
+
+class SupportPhase{
+  public :
+    SupportPhase();
+    SupportPhase(LegPhase p, double start, double end, Step* left, Step* right)
+    {
+            Phase     = p;
+            StartTime = start;
+            EndTime   = end;
+            LeftFoot  = left;
+            RightFoot = right;
+    }
+    //SupportPhase(double start, double end, Step* left, Step* right, LegPhase ph);
+  double StartTime;
+  double EndTime;
+  LegPhase Phase;
+  Step *LeftFoot;
+  Step *RightFoot;  
+  Step *NextStep;//deprecated
+  Step *CurrStep;//deprecated
+  Step *PrevStep;//deprecated
+};
+
+#endif
